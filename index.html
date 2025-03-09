@@ -1,217 +1,258 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Advanced Insurance Data Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Data Portal</title>
     <style>
         :root {
-            --grid-columns: 2;
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #27ae60;
         }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .filters {
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f6fa;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            background: var(--primary);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--secondary);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .custom-file-upload:hover {
+            background: #2980b9;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .filters-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-grid {
             display: grid;
-            grid-template-columns: repeat(var(--grid-columns), 1fr);
-            gap: 10px;
-            margin: 20px 0;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
+
         .filter-group {
             display: flex;
             flex-direction: column;
+            gap: 0.5rem;
         }
-        input, select {
-            padding: 6px;
-            margin: 2px 0;
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
         }
+
+        .filter-input {
+            padding: 0.8rem;
+            border: 2px solid #dfe6e9;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .button-group {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .reset-btn {
+            padding: 12px 30px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #c0392b;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #dfe6e9;
+        }
+
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .data-table tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--secondary);
+        }
+
         @media (max-width: 768px) {
-            :root { --grid-columns: 1; }
+            .container {
+                padding: 10px;
+            }
+            
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .data-table {
+                display: block;
+                overflow-x: auto;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Insurance Data Viewer</h1>
-    <input type="file" id="file-input" accept=".xlsx, .xls">
-    
-    <div class="filters">
-        <!-- Text-based Filters -->
-        <div class="filter-group">
-            <label>Branch</label>
-            <input type="text" id="branch" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Department</label>
-            <input type="text" id="department" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Product Code</label>
-            <input type="text" id="product-code" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Policy No</label>
-            <input type="text" id="policy-no" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Endo No</label>
-            <input type="text" id="endo-no" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Currency</label>
-            <input type="text" id="currency" oninput="filterData()">
-        </div>
-        
-        <!-- Date Filters -->
-        <div class="filter-group">
-            <label>Issue Date</label>
-            <input type="date" id="issue-date" onchange="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Effective Date</label>
-            <input type="date" id="effective-date" onchange="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Expire Date</label>
-            <input type="date" id="expire-date" onchange="filterData()">
-        </div>
-        
-        <!-- Numeric Filters -->
-        <div class="filter-group">
-            <label>Sum Insured</label>
-            <input type="text" id="sum-insured" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Premium</label>
-            <input type="text" id="premium" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>VAT</label>
-            <input type="text" id="vat" oninput="filterData()">
-        </div>
-        
-        <!-- Additional Filters -->
-        <div class="filter-group">
-            <label>Customer</label>
-            <input type="text" id="customer" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Agent/Broker</label>
-            <input type="text" id="agent-broker" oninput="filterData()">
-        </div>
-        <div class="filter-group">
-            <label>Sales</label>
-            <input type="text" id="sales" oninput="filterData()">
+    <div class="container">
+        <header class="header">
+            <h1>Insurance Policy Management System</h1>
+            <p>Upload and analyze policy data securely</p>
+        </header>
+
+        <section class="upload-section">
+            <label class="custom-file-upload">
+                📁 Upload Excel File
+                <input type="file" id="file-input" accept=".xlsx, .xls">
+            </label>
+        </section>
+
+        <section class="filters-container">
+            <h2>Advanced Filters</h2>
+            <div class="filter-grid">
+                <!-- Column 1 -->
+                <div class="filter-group">
+                    <label>Branch</label>
+                    <input type="text" class="filter-input" id="branch" placeholder="Search branch...">
+                </div>
+                <div class="filter-group">
+                    <label>Policy Number</label>
+                    <input type="text" class="filter-input" id="policy-no" placeholder="Enter policy no...">
+                </div>
+                <div class="filter-group">
+                    <label>Effective Date</label>
+                    <input type="date" class="filter-input" id="effective-date">
+                </div>
+
+                <!-- Column 2 -->
+                <div class="filter-group">
+                    <label>Product Code</label>
+                    <input type="text" class="filter-input" id="product-code" placeholder="Enter product code...">
+                </div>
+                <div class="filter-group">
+                    <label>Expire Date</label>
+                    <input type="date" class="filter-input" id="expire-date">
+                </div>
+                <div class="filter-group">
+                    <label>Customer</label>
+                    <input type="text" class="filter-input" id="customer" placeholder="Search customer...">
+                </div>
+
+                <!-- Column 3 -->
+                <div class="filter-group">
+                    <label>Agent/Broker</label>
+                    <input type="text" class="filter-input" id="agent-broker" placeholder="Search agent...">
+                </div>
+                <div class="filter-group">
+                    <label>Premium Range</label>
+                    <input type="text" class="filter-input" id="premium" placeholder="Enter amount...">
+                </div>
+                <div class="filter-group">
+                    <label>Sales</label>
+                    <input type="text" class="filter-input" id="sales" placeholder="Search sales...">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="reset-btn" onclick="resetFilters()">⟳ Reset All Filters</button>
+            </div>
+        </section>
+
+        <div id="data-container">
+            <!-- Table will be inserted here -->
         </div>
     </div>
 
-    <button onclick="resetFilters()">Reset All Filters</button>
-    <div id="data-container"></div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        let rawData = [];
-        let currentData = [];
 
-        document.getElementById('file-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                rawData = XLSX.utils.sheet_to_json(firstSheet);
-                currentData = [...rawData];
-                renderTable(currentData);
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        function renderTable(data) {
-            const container = document.getElementById('data-container');
-            container.innerHTML = '';
-            
-            const table = document.createElement('table');
-            const thead = table.createTHead();
-            const tbody = table.createTBody();
-
-            // Create headers
-            const headerRow = thead.insertRow();
-            Object.keys(data[0]).forEach(key => {
-                const th = document.createElement('th');
-                th.textContent = key;
-                headerRow.appendChild(th);
-            });
-
-            // Create data rows
-            data.forEach(row => {
-                const tr = tbody.insertRow();
-                Object.values(row).forEach(value => {
-                    const td = tr.insertCell();
-                    td.textContent = value;
-                });
-            });
-
-            container.appendChild(table);
-        }
-
-        function filterData() {
-            const filters = {
-                branch: document.getElementById('branch').value.toLowerCase(),
-                department: document.getElementById('department').value.toLowerCase(),
-                productCode: document.getElementById('product-code').value.toLowerCase(),
-                policyNo: document.getElementById('policy-no').value.toLowerCase(),
-                endoNo: document.getElementById('endo-no').value.toLowerCase(),
-                currency: document.getElementById('currency').value.toLowerCase(),
-                issueDate: document.getElementById('issue-date').value,
-                effectiveDate: document.getElementById('effective-date').value,
-                expireDate: document.getElementById('expire-date').value,
-                sumInsured: document.getElementById('sum-insured').value.toLowerCase(),
-                premium: document.getElementById('premium').value.toLowerCase(),
-                vat: document.getElementById('vat').value.toLowerCase(),
-                customer: document.getElementById('customer').value.toLowerCase(),
-                agentBroker: document.getElementById('agent-broker').value.toLowerCase(),
-                sales: document.getElementById('sales').value.toLowerCase()
-            };
-
-            currentData = rawData.filter(row => {
-                return (
-                    matchesText(row, 'Branch', filters.branch) &&
-                    matchesText(row, 'Department', filters.department) &&
-                    matchesText(row, 'Product Code', filters.productCode) &&
-                    matchesText(row, 'Policy No', filters.policyNo) &&
-                    matchesText(row, 'Endo No', filters.endoNo) &&
-                    matchesText(row, 'Currency', filters.currency) &&
-                    matchesDate(row, 'Issue date', filters.issueDate) &&
-                    matchesDate(row, 'Effective date', filters.effectiveDate) &&
-                    matchesDate(row, 'Expire Date', filters.expireDate) &&
-                    matchesText(row, 'Sum Insured', filters.sumInsured) &&
-                    matchesText(row, 'Premium', filters.premium) &&
-                    matchesText(row, 'VAT', filters.vat) &&
-                    matchesText(row, 'Customer', filters.customer) &&
-                    matchesText(row, 'Agent/Broker', filters.agentBroker) &&
-                    matchesText(row, 'Sales', filters.sales)
-                );
-            });
-
-            renderTable(currentData);
-        }
-
-        function matchesText(row, field, filterValue) {
-            if (!filterValue) return true;
-            return String(row[field]).toLowerCase().includes(filterValue);
-        }
-
-        function matchesDate(row, field, filterValue) {
-            if (!filterValue) return true;
-            const cellDate = new Date(row[field]).toISOString().split('T')[0];
-            return cellDate === filterValue;
-        }
-
-        function resetFilters() {
-            document.querySelectorAll('input').forEach(input => input.value = '');
-            currentData = [...rawData];
-            renderTable(currentData);
-        }
     </script>
 </body>
 </html>
