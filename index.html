@@ -251,7 +251,117 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-
+        let rawData = [];
+        let currentData = [];
+    
+        // File upload handler
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+    
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                rawData = XLSX.utils.sheet_to_json(firstSheet);
+                currentData = [...rawData];
+                renderTable(currentData);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    
+        // Table rendering function
+        function renderTable(data) {
+            const container = document.getElementById('data-container');
+            container.innerHTML = '';
+            
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            const thead = table.createTHead();
+            const tbody = table.createTBody();
+    
+            // Create headers
+            const headerRow = thead.insertRow();
+            if (data.length > 0) {
+                Object.keys(data[0]).forEach(key => {
+                    const th = document.createElement('th');
+                    th.textContent = key;
+                    headerRow.appendChild(th);
+                });
+            }
+    
+            // Create data rows
+            data.forEach(row => {
+                const tr = tbody.insertRow();
+                Object.values(row).forEach(value => {
+                    const td = tr.insertCell();
+                    td.textContent = value;
+                });
+            });
+    
+            container.appendChild(table);
+        }
+    
+        // Filter functionality
+        const filterInputs = document.querySelectorAll('.filter-input');
+        filterInputs.forEach(input => {
+            input.addEventListener('input', filterData);
+            if (input.type === 'date') {
+                input.addEventListener('change', filterData);
+            }
+        });
+    
+        function filterData() {
+            const filters = {
+                branch: document.getElementById('branch').value.toLowerCase(),
+                policyNo: document.getElementById('policy-no').value.toLowerCase(),
+                effectiveDate: document.getElementById('effective-date').value,
+                productCode: document.getElementById('product-code').value.toLowerCase(),
+                expireDate: document.getElementById('expire-date').value,
+                customer: document.getElementById('customer').value.toLowerCase(),
+                agentBroker: document.getElementById('agent-broker').value.toLowerCase(),
+                premium: document.getElementById('premium').value.toLowerCase(),
+                sales: document.getElementById('sales').value.toLowerCase()
+            };
+    
+            currentData = rawData.filter(row => {
+                return (
+                    matchesText(row, 'Branch', filters.branch) &&
+                    matchesText(row, 'Policy No', filters.policyNo) &&
+                    matchesDate(row, 'Effective date', filters.effectiveDate) &&
+                    matchesText(row, 'Product Code', filters.productCode) &&
+                    matchesDate(row, 'Expire Date', filters.expireDate) &&
+                    matchesText(row, 'Customer', filters.customer) &&
+                    matchesText(row, 'Agent/Broker', filters.agentBroker) &&
+                    matchesText(row, 'Premium', filters.premium) &&
+                    matchesText(row, 'Sales', filters.sales)
+                );
+            });
+    
+            renderTable(currentData);
+        }
+    
+        // Helper functions
+        function matchesText(row, field, filterValue) {
+            if (!filterValue) return true;
+            return String(row[field]).toLowerCase().includes(filterValue);
+        }
+    
+        function matchesDate(row, field, filterValue) {
+            if (!filterValue) return true;
+            const cellDate = new Date(row[field]).toISOString().split('T')[0];
+            return cellDate === filterValue;
+        }
+    
+        // Reset functionality
+        function resetFilters() {
+            document.querySelectorAll('.filter-input').forEach(input => {
+                input.value = '';
+            });
+            currentData = [...rawData];
+            renderTable(currentData);
+        }
     </script>
 </body>
 </html>
